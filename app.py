@@ -1,57 +1,39 @@
 import streamlit as st
 import openai
-
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings.openai import OpenAIEmbeddings
-
+from pypdf import PdfReader
 
 # Set API key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-st.title("📄 Chat with PDF (GenAI RAG App)")
+st.title("📄 Chat with PDF (Simple RAG App)")
 
-# Upload PDF
 uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
 
 if uploaded_file:
-    with open("temp.pdf", "wb") as f:
-        f.write(uploaded_file.read())
+    reader = PdfReader(uploaded_file)
 
-    st.success("PDF uploaded!")
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
 
-    # Load PDF
-    loader = PyPDFLoader("temp.pdf")
-    documents = loader.load()
+    st.success("PDF loaded!")
 
-    # Split text
-    text_splitter = CharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100
-    )
-    docs = text_splitter.split_documents(documents)
-
-    # Create embeddings
-    embeddings = OpenAIEmbeddings(openai_api_key=st.secrets["OPENAI_API_KEY"])
-
-    # Store in FAISS
-    db = FAISS.from_documents(docs, embeddings)
-
-    query = st.text_input("Ask a question from the PDF:")
+    query = st.text_input("Ask a question:")
 
     if query:
-        results = db.similarity_search(query)
+        prompt = f"""
+        Answer the question based only on the context below.
 
-        context = "\n".join([doc.page_content for doc in results])
+        Context:
+        {text[:3000]}
 
-        # OpenAI call
+        Question:
+        {query}
+        """
+
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Answer based only on the given context."},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
-            ]
+            messages=[{"role": "user", "content": prompt}]
         )
 
         st.write(response["choices"][0]["message"]["content"])
