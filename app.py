@@ -1,13 +1,13 @@
 import streamlit as st
-from openai import OpenAI
+import openai
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.embeddings.openai import OpenAIEmbeddings
 
-# Load API key from Streamlit secrets
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Set API key
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.title("📄 Chat with PDF (GenAI RAG App)")
 
@@ -40,18 +40,17 @@ if uploaded_file:
     query = st.text_input("Ask a question from the PDF:")
 
     if query:
-        # Search relevant chunks
         results = db.similarity_search(query)
 
         context = "\n".join([doc.page_content for doc in results])
 
-        # Ask OpenAI
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        # OpenAI call
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Answer based only on the given context."},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
             ]
         )
 
-        st.write(response.choices[0].message.content)
+        st.write(response["choices"][0]["message"]["content"])
