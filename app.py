@@ -2,33 +2,30 @@ import streamlit as st
 import openai
 from pypdf import PdfReader
 
-# Set API key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-st.title("📄 Chat with PDF (Simple RAG App)")
+st.title("📄 Chat with PDF")
 
-uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+uploaded_file = st.file_uploader("Upload PDF", type="pdf")
 
 if uploaded_file:
     reader = PdfReader(uploaded_file)
 
     text = ""
     for page in reader.pages:
-        text += page.extract_text()
+        text += page.extract_text() or ""
 
     st.success("PDF loaded!")
 
-    query = st.text_input("Ask a question:")
+    question = st.text_input("Ask question:")
 
-    if query:
+    if question:
         prompt = f"""
-        Answer the question based only on the context below.
+        Answer based on this document:
 
-        Context:
-        {text[:3000]}
+        {text[:2000]}
 
-        Question:
-        {query}
+        Question: {question}
         """
 
         response = openai.ChatCompletion.create(
