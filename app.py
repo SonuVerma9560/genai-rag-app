@@ -1,10 +1,11 @@
 import streamlit as st
 import openai
 
-from langchain_community.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.embeddings.openai import OpenAIEmbeddings
+
 
 # Set API key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
